@@ -2,19 +2,21 @@
 <html lang="ko">
 <head>
     <meta charset="UTF-8">
-    <title>Quick Image Resizer (Hybrid Export)</title>
+    <title>이미지 일괄 변환기 - 배너 버전</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
     <style>
-        body { margin: 0; padding: 0; display: flex; flex-direction: column; height: 100vh; font-family: sans-serif; background: #1a1a1a; color: #fff; overflow: hidden; }
+        body { margin: 0; padding: 0; display: flex; flex-direction: column; height: 100vh; font-family: 'Malgun Gothic', sans-serif; background: #1a1a1a; color: #fff; overflow: hidden; }
         #drop-zone { 
             flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; 
             border: 4px dashed #333; margin: 30px; border-radius: 30px; cursor: pointer; 
             transition: all 0.3s;
         }
-        #drop-zone:hover { border-color: #3498db; background: #222; }
-        #drop-zone.hover { border-color: #3498db; background: #252525; transform: scale(1.01); }
+        #drop-zone:hover { border-color: #2ecc71; background: #222; }
+        #drop-zone.hover { border-color: #2ecc71; background: #252525; transform: scale(1.005); }
         .plus-icon { font-size: 50px; margin-bottom: 15px; color: #444; }
-        #status { text-align: center; padding: 20px; font-weight: bold; color: #3498db; font-size: 1.2em; min-height: 1.2em; }
+        .main-text { font-size: 2em; font-weight: bold; color: #2ecc71; text-shadow: 0 0 15px rgba(46, 204, 113, 0.3); }
+        .sub-text { margin-top: 15px; color: #888; font-size: 1.1em; }
+        #status { text-align: center; padding: 20px; font-weight: bold; color: #2ecc71; font-size: 1.2em; min-height: 1.2em; }
         canvas { display: none; }
     </style>
 </head>
@@ -22,8 +24,8 @@
 
     <div id="drop-zone">
         <div class="plus-icon">+</div>
-        <div style="font-size: 1.5em; font-weight: bold;">IMAGES DROP HERE</div>
-        <div style="margin-top: 10px; color: #888;">PNG/JPG 자동 분류 및 9종 일괄 추출</div>
+        <div class="main-text">텍스트 없는 배너 버전</div>
+        <div class="sub-text">PNG/JPG 자동 분류 및 9종 일괄 추출</div>
     </div>
     
     <div id="status"></div>
@@ -37,7 +39,6 @@
     const canvas = document.getElementById('canvas');
     const ctx = canvas.getContext('2d');
 
-    // 규격 리스트 (type 추가: png 또는 jpeg)
     const targetSpecs = [
         { w: 1000, h: 1000, name: '1000_x', type: 'image/jpeg' },
         { w: 1200, h: 750,  name: '1200_x', type: 'image/jpeg' },
@@ -59,7 +60,7 @@
     async function handleFile(file) {
         if (!file || !file.type.startsWith('image/')) return;
 
-        status.innerText = "⚡ 하이브리드 규격 추출 중 (JPG/PNG)...";
+        status.innerText = "⚡ 9개 규격 일괄 생성 중...";
         const zip = new JSZip();
         const originalName = file.name.substring(0, file.name.lastIndexOf('.'));
 
@@ -76,10 +77,10 @@
         const content = await zip.generateAsync({type: "blob"});
         const zipLink = document.createElement('a');
         zipLink.href = URL.createObjectURL(content);
-        zipLink.download = `${originalName}_hybrid_bundle.zip`;
+        zipLink.download = `${originalName}_banners.zip`;
         zipLink.click();
 
-        status.innerText = "✅ 작업 완료!";
+        status.innerText = "✅ 모든 규격 추출 완료!";
         setTimeout(() => { status.innerText = ""; }, 3000);
     }
 
@@ -90,21 +91,16 @@
                 const img = new Image();
                 img.onload = () => {
                     ctx.clearRect(0, 0, targetW, targetH);
-                    
-                    // PNG일 경우 투명도를 위해 배경색을 채우지 않고, JPG일 경우만 흰색 배경을 채움
                     if (mimeType === 'image/jpeg') {
                         ctx.fillStyle = "white";
                         ctx.fillRect(0, 0, targetW, targetH);
                     }
-
                     let scale = Math.max(targetW / img.width, targetH / img.height);
                     let w = img.width * scale;
                     let h = img.height * scale;
                     let x = (targetW - w) / 2;
                     let y = (targetH - h) / 2;
                     ctx.drawImage(img, x, y, w, h);
-                    
-                    // 품질 설정 (JPG는 0.8 압축, PNG는 무손실)
                     const quality = mimeType === 'image/jpeg' ? 0.8 : 1.0;
                     canvas.toBlob((blob) => resolve(blob), mimeType, quality);
                 };
